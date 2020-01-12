@@ -1,0 +1,38 @@
+galaxy_info:
+  role_name: m7s_k8s_cert_manager
+  author: Christian Rodriguez
+  description: Installs k8s cert manager
+  company: Mikroways
+
+  license: GPLv2
+
+  min_ansible_version: 2.7
+
+  platforms:
+  - name: EL
+    versions:
+    - all
+  - name: Fedora
+    versions:
+    - all
+  - name: Ubuntu
+    versions:
+    - all
+  - name: Debian
+    versions:
+    - jessie
+  - name: Alpine
+    versions:
+    - all
+  - name: macOS
+    versions:
+    - all
+
+  galaxy_tags:
+    - kubernetes
+    - Certificates
+    - Let's Encrypt
+
+dependencies:
+ - role: mikroways.m7s_k8s_helm
+   version: 1.1.0

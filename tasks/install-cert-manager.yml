@@ -1,0 +1,33 @@
+---
+- name: create cert-manager namespace
+  k8s:
+    definition:
+      apiversion: v1
+      kind: namespace
+      metadata:
+        name: "{{ m7s_k8s_cert_manager_namespace }}"
+        labels:
+          app: cert-manager
+- name: install cert-manager crds
+  k8s:
+    resource_definition: '{{ item }}'
+  with_items: '{{ lookup("url", "https://raw.githubusercontent.com/jetstack/cert-manager/release-{{ m7s_k8s_cert_manager_version }}/deploy/manifests/00-crds.yaml", split_lines=false) | from_yaml_all | list }}'
+  when: item is not none
+  no_log: true
+
+- name: Install cert-manager using helm
+  block:
+    - name: Add cert-manager repo
+      include_role: 
+        name: mikroways.m7s_k8s_helm
+      vars:
+        m7s_k8s_helm_repos:
+        - name: "{{ m7s_k8s_cert_manager_helm_repo_name}}"
+          url: "{{ m7s_k8s_cert_manager_helm_repo_url }}"
+        m7s_k8s_helm_charts:
+        - name: "{{ m7s_k8s_cert_manager_helm_chart_name }}"
+          chart: "{{ m7s_k8s_cert_manager_helm_chart }}"
+          version: "{{ m7s_k8s_cert_manager_version }}"
+          namespace: "{{ m7s_k8s_cert_manager_namespace }}"
+          config_values: "{{ m7s_k8s_cert_manager_helm_config }}"
+

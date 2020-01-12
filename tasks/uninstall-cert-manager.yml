@@ -1,0 +1,37 @@
+---
+- name: Uninstall cert-manager using helm
+  block:
+    - name: Delete cert-manager repo
+      include_role: 
+        name: mikroways.m7s_k8s_helm
+      vars:
+        m7s_k8s_helm_repos:
+        - name: "{{ m7s_k8s_cert_manager_helm_repo_name}}"
+          url: "{{ m7s_k8s_cert_manager_helm_repo_url }}"
+          state: absent
+        m7s_k8s_helm_charts:
+        - name: "{{ m7s_k8s_cert_manager_helm_chart_name }}"
+          chart: "{{ m7s_k8s_cert_manager_helm_chart }}"
+          version: "{{ m7s_k8s_cert_manager_version }}"
+          namespace: "{{ m7s_k8s_cert_manager_namespace }}"
+          config_values: "{{ m7s_k8s_cert_manager_helm_config }}"
+          state: absent
+
+- name: Remove cert-manager CRDs
+  k8s:
+    resource_definition: '{{ item }}'
+    state: absent
+  with_items: '{{ lookup("url", "https://raw.githubusercontent.com/jetstack/cert-manager/release-{{ m7s_k8s_cert_manager_version }}/deploy/manifests/00-crds.yaml", split_lines=False) | from_yaml_all | list }}'
+  when: item is not none
+  no_log: true
+
+- name: Remove cert-manager namespace
+  k8s:
+    state: absent
+    definition:
+      apiversion: v1
+      kind: namespace
+      metadata:
+        name: "{{ m7s_k8s_cert_manager_namespace }}"
+        labels:
+          app: cert-manager

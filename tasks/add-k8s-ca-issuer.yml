@@ -1,0 +1,46 @@
+---
+- name: Get k8s ca.crt
+  command: cat {{ m7s_k8s_cert_manager_ca_issuer_from_k8s_cert_file }}
+  register: k8s_ca_crt
+  changed_when: ( k8s_ca_crt.rc == 0 ) and ( k8s_ca_crt.stdout | length > 0 )
+
+- name: Get k8s ca.key
+  command: cat {{ m7s_k8s_cert_manager_ca_issuer_from_k8s_key_file }}
+  register: k8s_ca_key
+  changed_when: ( k8s_ca_key.rc == 0 ) and ( k8s_ca_key.stdout | length > 0 )
+
+- name: Create secret
+  k8s:
+    resource_definition: |
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: {{ m7s_k8s_cert_manager_ca_issuer_from_k8s_secret_name }}
+        namespace: {{ m7s_k8s_cert_manager_namespace }}
+      data:
+        tls.crt: "{{ k8s_ca_crt.stdout | b64encode }}"
+        tls.key: "{{ k8s_ca_key.stdout | b64encode }}"
+
+- name: Wait until deployment status for cert-manager webhooks is ready
+  k8s_facts:
+    api_version: apps/v1
+    kind: Deployment
+    namespace: "{{ m7s_k8s_cert_manager_namespace }}"
+    label_selectors:
+      - app=webhook
+  register: deployment_status
+  until: (deployment_status.resources[0].status.readyReplicas | default(0) | int ) >= 1
+  retries: 30
+  delay: 15
+
+- name: Create cluster issuer
+  k8s:
+    resource_definition: |
+      apiVersion: cert-manager.io/v1alpha2
+      kind: ClusterIssuer
+      metadata:
+        name: {{ m7s_k8s_cert_manager_ca_issuer_from_k8s_cluster_issuer }}
+      spec:
+        ca:
+         secretName: {{ m7s_k8s_cert_manager_ca_issuer_from_k8s_secret_name }}
+

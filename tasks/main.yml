@@ -1,0 +1,13 @@
+---
+
+- name: Install cert-manager
+  include_tasks: install-cert-manager.yml
+  when: m7s_k8s_cert_manager_state == 'present'
+
+- name: Add k8s certificate as CA
+  include_tasks: add-k8s-ca-issuer.yml
+  when: ( m7s_k8s_cert_manager_state == 'present' ) and ( m7s_k8s_cert_manager_ca_issuer_from_k8s )
+
+- name: Uninstall cert-manager
+  include_tasks: uninstall-cert-manager.yml
+  when: m7s_k8s_cert_manager_state == 'absent'
