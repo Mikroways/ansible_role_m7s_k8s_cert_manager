@@ -35,4 +35,4 @@ galaxy_info:
 
 dependencies:
  - role: mikroways.m7s_k8s_helm
-   version: 1.1.0
+   version: 1.2.0
